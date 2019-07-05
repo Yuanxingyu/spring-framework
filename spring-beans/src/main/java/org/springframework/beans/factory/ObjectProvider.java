@@ -79,6 +79,7 @@ public interface ObjectProvider<T> extends ObjectFactory<T>, Iterable<T> {
 	}
 
 	/**
+	 * @UNDERSTAND	default关键字：接口可实现默认方法，实现类可以覆盖，也可以直接使用。
 	 * Consume an instance (possibly shared or independent) of the object
 	 * managed by this factory, if available.
 	 * @param dependencyConsumer a callback for processing the target object

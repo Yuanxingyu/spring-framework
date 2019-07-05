@@ -157,6 +157,11 @@ public abstract class StringUtils {
 		return (str != null && !str.isEmpty() && containsText(str));
 	}
 
+	/**
+	 * @UNDERSTAND ：空白符检验
+	 * @param str
+	 * @return
+	 */
 	private static boolean containsText(CharSequence str) {
 		int strLen = str.length();
 		for (int i = 0; i < strLen; i++) {

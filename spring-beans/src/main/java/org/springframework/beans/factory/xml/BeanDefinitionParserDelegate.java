@@ -406,12 +406,16 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
+	 * @UNDERSTAND
 	 * Parses the supplied {@code <bean>} element. May return {@code null}
 	 * if there were errors during parse. Errors are reported to the
 	 * {@link org.springframework.beans.factory.parsing.ProblemReporter}.
 	 */
 	@Nullable
 	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, @Nullable BeanDefinition containingBean) {
+		/**
+		 * 解析id与name属性，这是bean标签的必设属性
+		 */
 		String id = ele.getAttribute(ID_ATTRIBUTE);
 		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
 
@@ -421,7 +425,14 @@ public class BeanDefinitionParserDelegate {
 			aliases.addAll(Arrays.asList(nameArr));
 		}
 
+		/**
+		 * beanName就是<bean>标签中的id 元素
+		 */
 		String beanName = id;
+		/**
+		 * 如果beanName不合法（StringUtils.hasText() 做了不为空且非空白符检验）,且别名不为空
+		 * 		则取第一个别名集合中的元素作为beanName，并将其移除出别名集合
+		 */
 		if (!StringUtils.hasText(beanName) && !aliases.isEmpty()) {
 			beanName = aliases.remove(0);
 			if (logger.isTraceEnabled()) {
@@ -431,11 +442,17 @@ public class BeanDefinitionParserDelegate {
 		}
 
 		if (containingBean == null) {
+			//检验上述过程得到的beanName是否注册过（即验证beanName的唯一性，程序员可能在xml中定义了同名beanName的bean标签）
 			checkNameUniqueness(beanName, aliases, ele);
 		}
 
+		/**
+		 * parseBeanDefinitionElement是对element元素其他非必设属性（除id与name）的解析
+		 * 通过拿到的beanName构造beanDefinition，这里的beanName是xml中配置的name标签。
+		 */
 		AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
 		if (beanDefinition != null) {
+			//beanName为空的情况（从别名集合取出的元素依旧不合法），则通过规则根据ClassName进行beanName的设定
 			if (!StringUtils.hasText(beanName)) {
 				try {
 					if (containingBean != null) {
@@ -447,10 +464,16 @@ public class BeanDefinitionParserDelegate {
 						// Register an alias for the plain bean class name, if still possible,
 						// if the generator returned the class name plus a suffix.
 						// This is expected for Spring 1.2/2.0 backwards compatibility.
+						/**
+						 * 这里通过构造完成的beanDefinition得到BeanClassName作为beanName，用于自身的标识规则
+						 */
 						String beanClassName = beanDefinition.getBeanClassName();
 						if (beanClassName != null &&
 								beanName.startsWith(beanClassName) && beanName.length() > beanClassName.length() &&
 								!this.readerContext.getRegistry().isBeanNameInUse(beanClassName)) {
+							/**
+							 * 将别名中删除的程序员自定义的beanName以ClassBeanName代替
+							 */
 							aliases.add(beanClassName);
 						}
 					}
@@ -465,6 +488,9 @@ public class BeanDefinitionParserDelegate {
 				}
 			}
 			String[] aliasesArray = StringUtils.toStringArray(aliases);
+			/**
+			 * 用规则生成的beanName与别名List生成新的bdholder，这个时候规则生成的beanName还没有进行检验，此步骤中会再次检验
+			 */
 			return new BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);
 		}
 
@@ -472,6 +498,7 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	/**
+	 * @UNDERSTAND ：用于检验<bean>标签是否已被注册
 	 * Validate that the specified bean name and aliases have not been used already
 	 * within the current level of beans element nesting.
 	 */
@@ -503,15 +530,18 @@ public class BeanDefinitionParserDelegate {
 		this.parseState.push(new BeanEntry(beanName));
 
 		String className = null;
+		//解析class属性
 		if (ele.hasAttribute(CLASS_ATTRIBUTE)) {
 			className = ele.getAttribute(CLASS_ATTRIBUTE).trim();
 		}
 		String parent = null;
+		//解析parent属性
 		if (ele.hasAttribute(PARENT_ATTRIBUTE)) {
 			parent = ele.getAttribute(PARENT_ATTRIBUTE);
 		}
 
 		try {
+			// 创建用于承载属性的AbstractBeanDefinition
 			AbstractBeanDefinition bd = createBeanDefinition(className, parent);
 
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
@@ -929,6 +959,9 @@ public class BeanDefinitionParserDelegate {
 					" is only allowed to contain either 'ref' attribute OR 'value' attribute OR sub-element", ele);
 		}
 
+		/**
+		 * 必定要有ref属性或者value属性，或者子元素。三者必有其一，且三者皆不共存
+		 */
 		if (hasRefAttribute) {
 			String refName = ele.getAttribute(REF_ATTRIBUTE);
 			if (!StringUtils.hasText(refName)) {

@@ -221,6 +221,7 @@ public abstract class ClassUtils {
 	}
 
 	/**
+	 * @UNDERSTANMD
 	 * Replacement for {@code Class.forName()} that also returns Class instances
 	 * for primitives (e.g. "int") and array class names (e.g. "String[]").
 	 * Furthermore, it is also capable of resolving inner class names in Java source
@@ -239,6 +240,9 @@ public abstract class ClassUtils {
 		Assert.notNull(name, "Name must not be null");
 
 		Class<?> clazz = resolvePrimitiveClassName(name);
+		/**
+		 * 通过name拿不到对应的Class才会通过classLoader继续构造class
+		 */
 		if (clazz == null) {
 			clazz = commonClassCache.get(name);
 		}

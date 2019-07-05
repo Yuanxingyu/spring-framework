@@ -132,7 +132,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 
-	/** Map from serialized id to factory instance. */
+	/** Map from serialized id to factory instance.
+	 *  何为serialized id？
+	 */
 	private static final Map<String, Reference<DefaultListableBeanFactory>> serializableFactories =
 			new ConcurrentHashMap<>(8);
 
@@ -140,11 +142,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	@Nullable
 	private String serializationId;
 
-	/** Whether to allow re-registration of a different definition with the same name. */
-	private boolean allowBeanDefinitionOverriding = true;
-
-	/** Whether to allow eager class loading even for lazy-init beans. */
-	private boolean allowEagerClassLoading = true;
 
 	/** Optional OrderComparator for dependency Lists and arrays. */
 	@Nullable
@@ -155,8 +152,23 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	/** Map from dependency type to corresponding autowired value. */
 	private final Map<Class<?>, Object> resolvableDependencies = new ConcurrentHashMap<>(16);
+	/** Whether to allow re-registration of a different definition with the same name.
+	 * @UNDERSTAND
+	 * 进行beanDefinition扫描解析的时候，控制是否允许<bean>标签重名，重名则覆盖
+	 */
+	private boolean allowBeanDefinitionOverriding = true;
 
-	/** Map of bean definition objects, keyed by bean name. */
+	/** Whether to allow eager class loading even for lazy-init beans.
+	 * @UNDERSTAND
+	 * 是否预加载--即是否在项目启动时，允许spring直接将其实例化。通过@Lazy(true)控制
+	 */
+	private boolean allowEagerClassLoading = true;
+
+	/** Map of bean definition objects, keyed by bean name.
+	 * @UNDERSTANDING
+	 * 真正的spring容器，其他对容器进行getBean()等的所有操作了，都是对此map进行的。即spring重点维护该map
+	 * 通过bean名称存储对其封装的spring定义的bean数据结构BeanDefinition
+	 */
 	private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
 
 	/** Map of singleton and non-singleton bean names, keyed by dependency type. */
@@ -198,11 +210,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	/**
 	 * Specify an id for serialization purposes, allowing this BeanFactory to be
 	 * deserialized from this id back into the BeanFactory object, if needed.
+	 *
+	 * @UNDERSTANDING
+	 * 设置该beanfactory的序列化id，若需要，可根据此id进行反序列化得到beanfactory
+	 * @QUESTION
+	 * 难道不要考虑id设置重复的问题？
 	 */
 	public void setSerializationId(@Nullable String serializationId) {
 		if (serializationId != null) {
 			serializableFactories.put(serializationId, new WeakReference<>(this));
 		}
+		//参数为空表示删除该beanfactory的序列化
 		else if (this.serializationId != null) {
 			serializableFactories.remove(this.serializationId);
 		}
@@ -290,6 +308,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		Assert.notNull(autowireCandidateResolver, "AutowireCandidateResolver must not be null");
 		if (autowireCandidateResolver instanceof BeanFactoryAware) {
 			if (System.getSecurityManager() != null) {
+				//TODO 什么意思？
 				AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
 					((BeanFactoryAware) autowireCandidateResolver).setBeanFactory(DefaultListableBeanFactory.this);
 					return null;
@@ -310,6 +329,11 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	}
 
 
+	/**
+	 * @UNDERSTANDING
+	 * 通过其他的DefaultListableBeanFactory修改本身的配置信息
+	 * @param otherFactory the other BeanFactory to copy from
+	 */
 	@Override
 	public void copyConfigurationFrom(ConfigurableBeanFactory otherFactory) {
 		super.copyConfigurationFrom(otherFactory);
@@ -328,6 +352,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	//---------------------------------------------------------------------
 	// Implementation of remaining BeanFactory methods
+	// @UNDERSTANDING 实现顶层BeanFactory方法
 	//---------------------------------------------------------------------
 
 	@Override

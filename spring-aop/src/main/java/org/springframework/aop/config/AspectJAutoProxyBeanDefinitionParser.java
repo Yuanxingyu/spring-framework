@@ -36,12 +36,21 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @since 2.0
  */
+
+/**
+* @Description:    类功能说明：核心是对AnnotationAutoProxyCreatorIfNecessary的注册，具体逻辑代码在AopNameSpaceUtils中
+ * 									主要是对注解及其子类的一系列处理
+* @Title:          AspectJAutoProxyBeanDefinitionParser
+* @CreateDate:     2019/6/22 9:11
+*/
 class AspectJAutoProxyBeanDefinitionParser implements BeanDefinitionParser {
 
 	@Override
 	@Nullable
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		//注册AnnotationAutoProxyCreatorIfNecessary***核心
 		AopNamespaceUtils.registerAspectJAnnotationAutoProxyCreatorIfNecessary(parserContext, element);
+		//对于注解子类的处理
 		extendBeanDefinition(element, parserContext);
 		return null;
 	}
@@ -55,6 +64,7 @@ class AspectJAutoProxyBeanDefinitionParser implements BeanDefinitionParser {
 	}
 
 	private void addIncludePatterns(Element element, ParserContext parserContext, BeanDefinition beanDef) {
+		//将element子类转化成TypedStringValue，通过特定封装的ManagedList为其封装source
 		ManagedList<TypedStringValue> includePatterns = new ManagedList<>();
 		NodeList childNodes = element.getChildNodes();
 		for (int i = 0; i < childNodes.getLength(); i++) {
